@@ -16,7 +16,8 @@ const Editor = () => {
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: "h-full p-4 prose dark:prose-invert",
+        class:
+          "h-full p-4 prose dark:prose-invert min-w-[65ch] @max-[65ch]:min-w-[100cqw]",
       },
     },
   });
