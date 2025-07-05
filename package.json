@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.9",
     "@tiptap/extensions": "^3.0.0-beta.11",
     "@tiptap/pm": "^3.0.0-beta.11",
     "@tiptap/react": "^3.0.0-beta.11",
