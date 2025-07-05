@@ -4,6 +4,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const HomePage = () => {
   return (
@@ -16,9 +17,11 @@ const HomePage = () => {
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel>
-          <main className="*:@container *:h-full h-full *:grid *:justify-center">
-            <Editor />
-          </main>
+          <ScrollArea className="h-screen">
+            <main className="*:@container *:h-full h-screen *:grid *:justify-center">
+              <Editor />
+            </main>
+          </ScrollArea>
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel>
