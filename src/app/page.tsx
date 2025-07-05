@@ -11,6 +11,9 @@ import { db, Note } from "./database";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PlusIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const getInitialNote = async () => {
   const notes = await db.notes.toArray();
@@ -35,50 +38,99 @@ const getInitialNote = async () => {
 const HomePage = () => {
   const notes = useLiveQuery(() => db.notes.toArray());
   const [selectedNote, setSelectedNote] = useState<Note | undefined>(undefined);
+  const [addingNote, setAddingNote] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState("");
 
   useEffect(() => {
     getInitialNote().then((note) => setSelectedNote(note));
   }, []);
 
+  useEffect(() => {
+    const cancelAddingNote = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setAddingNote(false);
+        setNewNoteTitle("");
+      }
+    };
+    if (addingNote) {
+      document.addEventListener("keydown", cancelAddingNote);
+    } else {
+      document.removeEventListener("keydown", cancelAddingNote);
+    }
+    return () => {
+      document.removeEventListener("keydown", cancelAddingNote);
+    };
+  }, [addingNote]);
+
   return (
     <div className="h-screen">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={20}>
-          <aside>
-            <h4>Files</h4>
-            <Button
-              className="w-full justify-start rounded-none border-r-0 mb-6"
-              onClick={async () => {
-                const newNoteId = await db.notes.add({
-                  title: "New Note",
-                  content: "",
-                  createdAt: Date.now(),
-                  updatedAt: Date.now(),
-                });
-                setSelectedNote({
-                  id: newNoteId,
-                  title: "New Note",
-                  content: "",
-                  createdAt: Date.now(),
-                  updatedAt: Date.now(),
-                });
-              }}
-            >
-              Add Notes
-            </Button>
-            {notes?.map((note) => {
-              const isSelected = selectedNote?.id === note.id;
-              return (
-                <Button
-                  key={note.id}
-                  onClick={() => setSelectedNote(note)}
-                  variant={isSelected ? "outline" : "ghost"}
-                  className="w-full justify-start rounded-none border-r-0"
-                >
-                  {note.title}
-                </Button>
-              );
-            })}
+          <aside className="grid gap-4">
+            <div className="flex items-center justify-between pl-4 pt-4">
+              <h4 className="text-lg font-medium">Notes</h4>
+              <Button
+                onClick={() => {
+                  setAddingNote(true);
+                }}
+                variant="ghost"
+                size="icon"
+              >
+                <PlusIcon className="w-4 h-4" />
+              </Button>
+            </div>
+            <div>
+              {addingNote && (
+                <div>
+                  <Input
+                    className="rounded-none"
+                    value={newNoteTitle}
+                    onChange={(e) => setNewNoteTitle(e.target.value)}
+                    autoFocus
+                    placeholder="New Note"
+                    onBlur={async () => {
+                      if (newNoteTitle.trim() === "") {
+                        setAddingNote(false);
+                        setNewNoteTitle("");
+                      } else {
+                        const newNoteId = await db.notes.add({
+                          title: newNoteTitle,
+                          content: "",
+                          createdAt: Date.now(),
+                          updatedAt: Date.now(),
+                        });
+                        setSelectedNote({
+                          id: newNoteId,
+                          title: newNoteTitle,
+                          content: "",
+                          createdAt: Date.now(),
+                          updatedAt: Date.now(),
+                        });
+                        setAddingNote(false);
+                        setNewNoteTitle("");
+                      }
+                    }}
+                  />
+                </div>
+              )}
+              {notes?.map((note) => {
+                const isSelected = selectedNote?.id === note.id;
+                return (
+                  <Button
+                    key={note.id}
+                    onClick={() => setSelectedNote(note)}
+                    variant="ghost"
+                    className={cn(
+                      "w-full justify-start rounded-none border-r-0",
+                      isSelected && "bg-accent"
+                    )}
+                  >
+                    {note.title}
+                  </Button>
+                );
+              })}
+            </div>
           </aside>
         </ResizablePanel>
         <ResizableHandle />
@@ -91,12 +143,12 @@ const HomePage = () => {
             )}
           </ScrollArea>
         </ResizablePanel>
-        <ResizableHandle />
+        {/* <ResizableHandle />
         <ResizablePanel>
           <aside>
             <h4>Chat</h4>
           </aside>
-        </ResizablePanel>
+        </ResizablePanel> */}
       </ResizablePanelGroup>
     </div>
   );
