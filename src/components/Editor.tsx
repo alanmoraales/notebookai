@@ -37,6 +37,7 @@ const Editor = ({ note }: { note: Note }) => {
   useEffect(() => {
     if (editor && note) {
       editor.commands.setContent(note.content);
+      editor.commands.focus();
     }
   }, [note, editor]);
 
