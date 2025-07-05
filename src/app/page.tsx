@@ -2,14 +2,16 @@ import Editor from "@/components/Editor";
 
 const HomePage = () => {
   return (
-    <div className="grid justify-center">
-      <div className="grid grid-rows-[auto_1fr] h-screen w-[65ch] p-4">
-        <div className="flex items-center font-medium text-xl p-4">
-          <span>📗</span>
-          <h3>Notebook AI</h3>
-        </div>
+    <div className="grid grid-cols-[1fr] h-screen">
+      <aside className="hidden">
+        <h4>Files</h4>
+      </aside>
+      <main className="*:h-full">
         <Editor />
-      </div>
+      </main>
+      <aside className="hidden">
+        <h4>Chat</h4>
+      </aside>
     </div>
   );
 };
