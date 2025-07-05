@@ -1,15 +1,35 @@
 import Editor from "@/components/Editor";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const HomePage = () => {
   return (
-    <div className="grid justify-center">
-      <div className="grid grid-rows-[auto_1fr] h-screen w-[65ch] p-4">
-        <div className="flex items-center font-medium text-xl p-4">
-          <span>📗</span>
-          <h3>Notebook AI</h3>
-        </div>
-        <Editor />
-      </div>
+    <div className="h-screen">
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel>
+          <aside>
+            <h4>Files</h4>
+          </aside>
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel>
+          <ScrollArea className="h-screen">
+            <main className="*:@container *:h-full h-screen *:grid *:justify-center">
+              <Editor />
+            </main>
+          </ScrollArea>
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel>
+          <aside>
+            <h4>Chat</h4>
+          </aside>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 };
