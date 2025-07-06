@@ -9,7 +9,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { db, Note } from "./database";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusIcon } from "lucide-react";
@@ -59,7 +59,9 @@ const HomePage = () => {
       return notes.sort((a, b) => b.createdAt - a.createdAt);
     })
   );
-  const [selectedNote, setSelectedNote] = useState<Note | undefined>(undefined);
+  const [selectedNoteId, setSelectedNoteId] = useState<number | undefined>(
+    undefined
+  );
   const [addingNote, setAddingNote] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState("");
   const [confirmDeleteNote, setConfirmDeleteNote] = useState<Note | undefined>(
@@ -67,46 +69,73 @@ const HomePage = () => {
   );
   const [editNote, setEditNote] = useState<Note | undefined>(undefined);
   const [editNoteTitle, setEditNoteTitle] = useState("");
+  const selectedNote = useMemo(() => {
+    return notes?.find((note) => note.id === selectedNoteId);
+  }, [notes, selectedNoteId]);
 
   useEffect(() => {
-    getInitialNote().then((note) => setSelectedNote(note));
+    getInitialNote().then((note) => setSelectedNoteId(note.id));
   }, []);
 
   useEffect(() => {
-    const cancelAddingNote = (e: KeyboardEvent) => {
+    const addNoteShortcuts = async (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         setAddingNote(false);
         setNewNoteTitle("");
       }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (newNoteTitle.trim() !== "") {
+          const newNoteId = await db.notes.add({
+            title: newNoteTitle,
+            content: "",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          });
+          setSelectedNoteId(newNoteId);
+          setAddingNote(false);
+          setNewNoteTitle("");
+        }
+      }
     };
     if (addingNote) {
-      document.addEventListener("keydown", cancelAddingNote);
+      document.addEventListener("keydown", addNoteShortcuts);
     } else {
-      document.removeEventListener("keydown", cancelAddingNote);
+      document.removeEventListener("keydown", addNoteShortcuts);
     }
     return () => {
-      document.removeEventListener("keydown", cancelAddingNote);
+      document.removeEventListener("keydown", addNoteShortcuts);
     };
-  }, [addingNote]);
+  }, [addingNote, newNoteTitle]);
 
   useEffect(() => {
-    const cancelEditNote = (e: KeyboardEvent) => {
+    const editNoteShortcuts = async (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         setEditNote(undefined);
         setEditNoteTitle("");
       }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (editNote && editNoteTitle.trim() !== "") {
+          await db.notes.update(editNote.id, {
+            title: editNoteTitle,
+          });
+        }
+        setEditNote(undefined);
+        setEditNoteTitle("");
+      }
     };
     if (editNote) {
-      document.addEventListener("keydown", cancelEditNote);
+      document.addEventListener("keydown", editNoteShortcuts);
     } else {
-      document.removeEventListener("keydown", cancelEditNote);
+      document.removeEventListener("keydown", editNoteShortcuts);
     }
     return () => {
-      document.removeEventListener("keydown", cancelEditNote);
+      document.removeEventListener("keydown", editNoteShortcuts);
     };
-  }, [editNote]);
+  }, [editNote, editNoteTitle]);
 
   useEffect(() => {
     if (editNote) {
@@ -148,23 +177,14 @@ const HomePage = () => {
                   autoFocus
                   placeholder="New Note"
                   onBlur={async () => {
-                    if (newNoteTitle.trim() === "") {
-                      setAddingNote(false);
-                      setNewNoteTitle("");
-                    } else {
+                    if (newNoteTitle.trim() !== "") {
                       const newNoteId = await db.notes.add({
                         title: newNoteTitle,
                         content: "",
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                       });
-                      setSelectedNote({
-                        id: newNoteId,
-                        title: newNoteTitle,
-                        content: "",
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                      });
+                      setSelectedNoteId(newNoteId);
                       setAddingNote(false);
                       setNewNoteTitle("");
                     }
@@ -172,34 +192,9 @@ const HomePage = () => {
                 />
               )}
               {notes?.map((note) => {
-                const isSelected = selectedNote?.id === note.id;
+                const isSelected = selectedNoteId === note.id;
                 return (
-                  <ContextMenu
-                    key={note.id}
-                    // onOpenChange={(isOpen) => {
-                    //   const shortcutsEventListeners = (e: KeyboardEvent) => {
-                    //     if (e.key === "Delete") {
-                    //       e.preventDefault();
-                    //       setConfirmDeleteNote(note);
-                    //     }
-                    //     if (e.key === "E") {
-                    //       e.preventDefault();
-                    //       setEditNote(note);
-                    //     }
-                    //   };
-                    //   if (isOpen) {
-                    //     document.addEventListener(
-                    //       "keydown",
-                    //       shortcutsEventListeners
-                    //     );
-                    //   } else {
-                    //     document.removeEventListener(
-                    //       "keydown",
-                    //       shortcutsEventListeners
-                    //     );
-                    //   }
-                    // }}
-                  >
+                  <ContextMenu key={note.id}>
                     {editNote?.id === note.id ? (
                       <Input
                         id={`edit-note-${note.id}`}
@@ -221,7 +216,7 @@ const HomePage = () => {
                       <ContextMenuTrigger className="data-[state=open]:*:bg-accent">
                         <Button
                           key={note.id}
-                          onClick={() => setSelectedNote(note)}
+                          onClick={() => setSelectedNoteId(note.id)}
                           variant="ghost"
                           className={cn(
                             "w-full justify-start rounded-none border-r-0",
@@ -305,8 +300,8 @@ const HomePage = () => {
                 onClick={() => {
                   db.notes.delete(confirmDeleteNote.id);
                   setConfirmDeleteNote(undefined);
-                  if (selectedNote?.id === confirmDeleteNote.id) {
-                    setSelectedNote(undefined);
+                  if (selectedNoteId === confirmDeleteNote.id) {
+                    setSelectedNoteId(undefined);
                   }
                 }}
                 className="bg-destructive text-white hover:bg-destructive/90"
