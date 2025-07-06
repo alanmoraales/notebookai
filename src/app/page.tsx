@@ -14,6 +14,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const getInitialNote = async () => {
   const notes = await db.notes.toArray();
@@ -36,10 +53,20 @@ const getInitialNote = async () => {
 };
 
 const HomePage = () => {
-  const notes = useLiveQuery(() => db.notes.toArray());
+  const notes = useLiveQuery(() =>
+    db.notes.toArray().then((notes) => {
+      // Order by createdAt descending to show the most recently created note first
+      return notes.sort((a, b) => b.createdAt - a.createdAt);
+    })
+  );
   const [selectedNote, setSelectedNote] = useState<Note | undefined>(undefined);
   const [addingNote, setAddingNote] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [confirmDeleteNote, setConfirmDeleteNote] = useState<Note | undefined>(
+    undefined
+  );
+  const [editNote, setEditNote] = useState<Note | undefined>(undefined);
+  const [editNoteTitle, setEditNoteTitle] = useState("");
 
   useEffect(() => {
     getInitialNote().then((note) => setSelectedNote(note));
@@ -63,6 +90,38 @@ const HomePage = () => {
     };
   }, [addingNote]);
 
+  useEffect(() => {
+    const cancelEditNote = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setEditNote(undefined);
+        setEditNoteTitle("");
+      }
+    };
+    if (editNote) {
+      document.addEventListener("keydown", cancelEditNote);
+    } else {
+      document.removeEventListener("keydown", cancelEditNote);
+    }
+    return () => {
+      document.removeEventListener("keydown", cancelEditNote);
+    };
+  }, [editNote]);
+
+  useEffect(() => {
+    if (editNote) {
+      requestAnimationFrame(() => {
+        const editNoteInput = document.getElementById(
+          `edit-note-${editNote.id}`
+        );
+        if (editNoteInput) {
+          (editNoteInput as HTMLInputElement).focus();
+          (editNoteInput as HTMLInputElement).select();
+        }
+      });
+    }
+  }, [editNote]);
+
   return (
     <div className="h-screen">
       <ResizablePanelGroup direction="horizontal">
@@ -82,52 +141,118 @@ const HomePage = () => {
             </div>
             <div>
               {addingNote && (
-                <div>
-                  <Input
-                    className="rounded-none"
-                    value={newNoteTitle}
-                    onChange={(e) => setNewNoteTitle(e.target.value)}
-                    autoFocus
-                    placeholder="New Note"
-                    onBlur={async () => {
-                      if (newNoteTitle.trim() === "") {
-                        setAddingNote(false);
-                        setNewNoteTitle("");
-                      } else {
-                        const newNoteId = await db.notes.add({
-                          title: newNoteTitle,
-                          content: "",
-                          createdAt: Date.now(),
-                          updatedAt: Date.now(),
-                        });
-                        setSelectedNote({
-                          id: newNoteId,
-                          title: newNoteTitle,
-                          content: "",
-                          createdAt: Date.now(),
-                          updatedAt: Date.now(),
-                        });
-                        setAddingNote(false);
-                        setNewNoteTitle("");
-                      }
-                    }}
-                  />
-                </div>
+                <Input
+                  className="rounded-none"
+                  value={newNoteTitle}
+                  onChange={(e) => setNewNoteTitle(e.target.value)}
+                  autoFocus
+                  placeholder="New Note"
+                  onBlur={async () => {
+                    if (newNoteTitle.trim() === "") {
+                      setAddingNote(false);
+                      setNewNoteTitle("");
+                    } else {
+                      const newNoteId = await db.notes.add({
+                        title: newNoteTitle,
+                        content: "",
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                      });
+                      setSelectedNote({
+                        id: newNoteId,
+                        title: newNoteTitle,
+                        content: "",
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                      });
+                      setAddingNote(false);
+                      setNewNoteTitle("");
+                    }
+                  }}
+                />
               )}
               {notes?.map((note) => {
                 const isSelected = selectedNote?.id === note.id;
                 return (
-                  <Button
+                  <ContextMenu
                     key={note.id}
-                    onClick={() => setSelectedNote(note)}
-                    variant="ghost"
-                    className={cn(
-                      "w-full justify-start rounded-none border-r-0",
-                      isSelected && "bg-accent"
-                    )}
+                    // onOpenChange={(isOpen) => {
+                    //   const shortcutsEventListeners = (e: KeyboardEvent) => {
+                    //     if (e.key === "Delete") {
+                    //       e.preventDefault();
+                    //       setConfirmDeleteNote(note);
+                    //     }
+                    //     if (e.key === "E") {
+                    //       e.preventDefault();
+                    //       setEditNote(note);
+                    //     }
+                    //   };
+                    //   if (isOpen) {
+                    //     document.addEventListener(
+                    //       "keydown",
+                    //       shortcutsEventListeners
+                    //     );
+                    //   } else {
+                    //     document.removeEventListener(
+                    //       "keydown",
+                    //       shortcutsEventListeners
+                    //     );
+                    //   }
+                    // }}
                   >
-                    {note.title}
-                  </Button>
+                    {editNote?.id === note.id ? (
+                      <Input
+                        id={`edit-note-${note.id}`}
+                        className="rounded-none"
+                        defaultValue={note.title}
+                        onChange={(e) => setEditNoteTitle(e.target.value)}
+                        placeholder="Rename Note"
+                        onBlur={async () => {
+                          if (editNoteTitle.trim() !== "") {
+                            await db.notes.update(note.id, {
+                              title: editNoteTitle,
+                            });
+                          }
+                          setEditNote(undefined);
+                          setEditNoteTitle("");
+                        }}
+                      />
+                    ) : (
+                      <ContextMenuTrigger className="data-[state=open]:*:bg-accent">
+                        <Button
+                          key={note.id}
+                          onClick={() => setSelectedNote(note)}
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start rounded-none border-r-0",
+                            isSelected && "bg-accent"
+                          )}
+                        >
+                          {note.title}
+                        </Button>
+                      </ContextMenuTrigger>
+                    )}
+
+                    <ContextMenuContent>
+                      <ContextMenuItem
+                        onSelect={() => {
+                          setEditNote(note);
+                        }}
+                      >
+                        Rename
+                        <ContextMenuShortcut>E</ContextMenuShortcut>
+                      </ContextMenuItem>
+                      <ContextMenuItem
+                        variant="destructive"
+                        onSelect={() => {
+                          setConfirmDeleteNote(note);
+                        }}
+                      >
+                        Delete
+                        <ContextMenuShortcut>⌘⌫</ContextMenuShortcut>
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 );
               })}
             </div>
@@ -150,6 +275,48 @@ const HomePage = () => {
           </aside>
         </ResizablePanel> */}
       </ResizablePanelGroup>
+      {confirmDeleteNote && (
+        <AlertDialog
+          open={!!confirmDeleteNote}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setConfirmDeleteNote(undefined);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Note</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this note{" "}
+                {`"${confirmDeleteNote.title}"`}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                className="bg-muted hover:bg-muted/90"
+                onClick={() => {
+                  setConfirmDeleteNote(undefined);
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  db.notes.delete(confirmDeleteNote.id);
+                  setConfirmDeleteNote(undefined);
+                  if (selectedNote?.id === confirmDeleteNote.id) {
+                    setSelectedNote(undefined);
+                  }
+                }}
+                className="bg-destructive text-white hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };
