@@ -24,11 +24,8 @@ const Editor = ({ note }: { note: Note }) => {
       },
     },
     onBlur: ({ editor }) => {
-      db.notes.put({
-        id: note.id,
-        title: note.title,
+      db.notes.update(note.id, {
         content: editor.getHTML(),
-        createdAt: note.createdAt,
         updatedAt: Date.now(),
       });
     },
