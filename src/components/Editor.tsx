@@ -56,7 +56,7 @@ const Editor = ({ note }: { note: Note }) => {
       <Input
         id={`edit-note-title-${note.id}`}
         defaultValue={note.title}
-        className="rounded-none px-0 text-3xl! font-bold! focus-visible:outline-none! border-0 shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+        className="bg-transparent! rounded-none px-0 text-3xl! font-bold! focus-visible:outline-none! border-0 shadow-none focus-visible:ring-0 focus-visible:shadow-none"
         onBlur={(e) => {
           db.notes.update(note.id, { title: e.target.value });
         }}
