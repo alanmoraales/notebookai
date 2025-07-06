@@ -52,7 +52,7 @@ const Editor = ({ note }: { note: Note }) => {
   }, [note]);
 
   return (
-    <div className="h-full grid gap-4 grid-rows-[auto_1fr] p-4">
+    <div className="h-full grid gap-4 grid-rows-[auto_1fr] p-4 pt-8">
       <Input
         id={`edit-note-title-${note.id}`}
         defaultValue={note.title}
