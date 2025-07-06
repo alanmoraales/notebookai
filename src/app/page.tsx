@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const getInitialNote = async () => {
   const notes = await db.notes.toArray();
@@ -155,101 +156,106 @@ const HomePage = () => {
     <div className="h-screen">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={20}>
-          <aside className="grid gap-4">
-            <div className="flex items-center justify-between pl-4 pt-4">
-              <h4 className="text-lg font-medium">Notes</h4>
-              <Button
-                onClick={() => {
-                  setAddingNote(true);
-                }}
-                variant="ghost"
-                size="icon"
-              >
-                <PlusIcon className="w-4 h-4" />
-              </Button>
-            </div>
-            <div>
-              {addingNote && (
-                <Input
-                  className="rounded-none"
-                  value={newNoteTitle}
-                  onChange={(e) => setNewNoteTitle(e.target.value)}
-                  autoFocus
-                  placeholder="New Note"
-                  onBlur={async () => {
-                    if (newNoteTitle.trim() !== "") {
-                      const newNoteId = await db.notes.add({
-                        title: newNoteTitle,
-                        content: "",
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                      });
-                      setSelectedNoteId(newNoteId);
-                      setAddingNote(false);
-                      setNewNoteTitle("");
-                    }
+          <aside className="flex flex-col justify-between h-full">
+            <div className="grid gap-4">
+              <div className="flex items-center justify-between pl-4 pt-4">
+                <h4 className="text-lg font-medium">Notes</h4>
+                <Button
+                  onClick={() => {
+                    setAddingNote(true);
                   }}
-                />
-              )}
-              {notes?.map((note) => {
-                const isSelected = selectedNoteId === note.id;
-                return (
-                  <ContextMenu key={note.id}>
-                    {editNote?.id === note.id ? (
-                      <Input
-                        id={`edit-note-${note.id}`}
-                        className="rounded-none"
-                        defaultValue={note.title}
-                        onChange={(e) => setEditNoteTitle(e.target.value)}
-                        placeholder="Rename Note"
-                        onBlur={async () => {
-                          if (editNoteTitle.trim() !== "") {
-                            await db.notes.update(note.id, {
-                              title: editNoteTitle,
-                            });
-                          }
-                          setEditNote(undefined);
-                          setEditNoteTitle("");
-                        }}
-                      />
-                    ) : (
-                      <ContextMenuTrigger className="data-[state=open]:*:bg-accent">
-                        <Button
-                          key={note.id}
-                          onClick={() => setSelectedNoteId(note.id)}
-                          variant="ghost"
-                          className={cn(
-                            "w-full justify-start rounded-none border-r-0",
-                            isSelected && "bg-accent"
-                          )}
-                        >
-                          {note.title}
-                        </Button>
-                      </ContextMenuTrigger>
-                    )}
+                  variant="ghost"
+                  size="icon"
+                >
+                  <PlusIcon className="w-4 h-4" />
+                </Button>
+              </div>
+              <div>
+                {addingNote && (
+                  <Input
+                    className="rounded-none"
+                    value={newNoteTitle}
+                    onChange={(e) => setNewNoteTitle(e.target.value)}
+                    autoFocus
+                    placeholder="New Note"
+                    onBlur={async () => {
+                      if (newNoteTitle.trim() !== "") {
+                        const newNoteId = await db.notes.add({
+                          title: newNoteTitle,
+                          content: "",
+                          createdAt: Date.now(),
+                          updatedAt: Date.now(),
+                        });
+                        setSelectedNoteId(newNoteId);
+                        setAddingNote(false);
+                        setNewNoteTitle("");
+                      }
+                    }}
+                  />
+                )}
+                {notes?.map((note) => {
+                  const isSelected = selectedNoteId === note.id;
+                  return (
+                    <ContextMenu key={note.id}>
+                      {editNote?.id === note.id ? (
+                        <Input
+                          id={`edit-note-${note.id}`}
+                          className="rounded-none"
+                          defaultValue={note.title}
+                          onChange={(e) => setEditNoteTitle(e.target.value)}
+                          placeholder="Rename Note"
+                          onBlur={async () => {
+                            if (editNoteTitle.trim() !== "") {
+                              await db.notes.update(note.id, {
+                                title: editNoteTitle,
+                              });
+                            }
+                            setEditNote(undefined);
+                            setEditNoteTitle("");
+                          }}
+                        />
+                      ) : (
+                        <ContextMenuTrigger className="data-[state=open]:*:bg-accent">
+                          <Button
+                            key={note.id}
+                            onClick={() => setSelectedNoteId(note.id)}
+                            variant="ghost"
+                            className={cn(
+                              "w-full justify-start rounded-none border-r-0",
+                              isSelected && "bg-accent"
+                            )}
+                          >
+                            {note.title}
+                          </Button>
+                        </ContextMenuTrigger>
+                      )}
 
-                    <ContextMenuContent>
-                      <ContextMenuItem
-                        onSelect={() => {
-                          setEditNote(note);
-                        }}
-                      >
-                        Rename
-                        <ContextMenuShortcut>E</ContextMenuShortcut>
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        variant="destructive"
-                        onSelect={() => {
-                          setConfirmDeleteNote(note);
-                        }}
-                      >
-                        Delete
-                        <ContextMenuShortcut>⌘⌫</ContextMenuShortcut>
-                      </ContextMenuItem>
-                    </ContextMenuContent>
-                  </ContextMenu>
-                );
-              })}
+                      <ContextMenuContent>
+                        <ContextMenuItem
+                          onSelect={() => {
+                            setEditNote(note);
+                          }}
+                        >
+                          Rename
+                          <ContextMenuShortcut>E</ContextMenuShortcut>
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          variant="destructive"
+                          onSelect={() => {
+                            setConfirmDeleteNote(note);
+                          }}
+                        >
+                          Delete
+                          <ContextMenuShortcut>⌘⌫</ContextMenuShortcut>
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex items-center justify-end p-4">
+              <ThemeToggle />
             </div>
           </aside>
         </ResizablePanel>
