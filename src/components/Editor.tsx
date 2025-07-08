@@ -97,12 +97,14 @@ const Editor = ({ note }: { note: Note }) => {
           }}
           options={{ placement: "top", offset: 8 }}
         >
-          <div className="bubble-menu bg-stone-900 rounded-md p-1 shadow-md flex gap-1">
+          <div className="bubble-menu dark:bg-stone-900 bg-stone-100 rounded-md p-1 shadow-md flex gap-1">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => editor.chain().focus().toggleBold().run()}
-              className={menuState.bold ? "bg-accent/50" : ""}
+              className={`${
+                menuState.bold ? "bg-stone-200 dark:bg-stone-800" : ""
+              } hover:bg-stone-200 dark:hover:bg-stone-800`}
             >
               <Bold />
             </Button>
@@ -110,7 +112,9 @@ const Editor = ({ note }: { note: Note }) => {
               variant="ghost"
               size="icon"
               onClick={() => editor.chain().focus().toggleItalic().run()}
-              className={menuState.italic ? "bg-accent/50" : ""}
+              className={`${
+                menuState.italic ? "bg-stone-200 dark:bg-stone-800" : ""
+              } hover:bg-stone-200 dark:hover:bg-stone-800`}
             >
               <Italic />
             </Button>
@@ -118,7 +122,9 @@ const Editor = ({ note }: { note: Note }) => {
               variant="ghost"
               size="icon"
               onClick={() => editor.chain().focus().toggleStrike().run()}
-              className={menuState.strike ? "bg-accent/50" : ""}
+              className={`${
+                menuState.strike ? "bg-stone-200 dark:bg-stone-800" : ""
+              } hover:bg-stone-200 dark:hover:bg-stone-800`}
             >
               <Strikethrough />
             </Button>
