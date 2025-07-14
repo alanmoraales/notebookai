@@ -20,7 +20,7 @@ const db = new Dexie("NotebookDatabase", {
 };
 
 // Schema declaration:
-db.version(2).stores({
+db.version(3).stores({
   notes: "@id, title, content, createdAt, updatedAt", // primary key "id" (for the runtime!)
 });
 
