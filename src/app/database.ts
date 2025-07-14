@@ -1,4 +1,6 @@
 import Dexie, { type EntityTable } from "dexie";
+import dexieCloud from "dexie-cloud-addon";
+import environment from "@/services/environment";
 
 interface Note {
   id: number;
@@ -8,7 +10,9 @@ interface Note {
   updatedAt: number;
 }
 
-const db = new Dexie("NotebookDatabase") as Dexie & {
+const db = new Dexie("NotebookDatabase", {
+  addons: [dexieCloud],
+}) as Dexie & {
   notes: EntityTable<
     Note,
     "id" // primary key "id" (for the typings only)
@@ -17,7 +21,12 @@ const db = new Dexie("NotebookDatabase") as Dexie & {
 
 // Schema declaration:
 db.version(1).stores({
-  notes: "++id, title, content, createdAt, updatedAt", // primary key "id" (for the runtime!)
+  notes: "@id, title, content, createdAt, updatedAt", // primary key "id" (for the runtime!)
+});
+
+db.cloud.configure({
+  databaseUrl: environment.dexieCloudUrl,
+  requireAuth: true // optional
 });
 
 export type { Note };
